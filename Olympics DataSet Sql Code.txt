@@ -1,0 +1,184 @@
+1.How Many olympics games have been held?
+select count(distinct games) as Total_olympics_games
+from Olympics_History;
+
+
+2.list down all olympics games held so far?
+select distinct(year),(games),city from olympics_History
+order by year asc;
+
+
+3.Mention the total no of nations who participated in each olympics games?
+select games,count(distinct(region)) from olympics_history
+inner join olympics_history_noc_regions
+on olympics_history.noc = olympics_history_noc_regions.noc
+group by games
+order by games asc;
+
+
+4.Which year saw the highest and lowest no of countries
+participating in olympics?
+select year,count(distinct(region)) as country_number from olympics_history
+inner join olympics_history_noc_regions
+on olympics_history.noc = olympics_history_noc_regions.noc
+group by year)
+
+	
+5.which nation has participated in all olympic games?
+select count(distinct(games)) as participation_number from olympics_history;
+select region,count(distinct(games))from olympics_history
+inner join olympics_history_noc_regions 
+on olympics_history.noc = olympics_history_noc_regions.noc
+group by region
+having count(distinct(games)) = 51;
+
+
+6.Identify the sport which was played in all summer olympics?
+select season,count(distinct(games)) as olympics_number from olympics_history
+group by season
+having season ='Summer';
+select distinct(sport) from olympics_history
+where season = 'Summer';
+select sport,count(distinct(games))from olympics_history
+where season = 'Summer'
+group by sport
+having count(distinct(games)) = 29;
+
+
+7.Which sports where just played only once in the olympics?
+select * from olympics_history;
+select sport,count(distinct(games))from olympics_history
+group by sport
+having count(distinct(games)) =1;
+
+
+8.Fetch the total no of sports playes in each olympic games?
+select games,count(distinct(sport)) as no_of_sports from olympics_history
+group by games
+order by no_of_sports desc ;
+
+
+9.Ftech oldest athletes to win a gold medal?
+    with temp as
+            (select name,sex,cast(case when age = 'NA' then '0' else age end as int) as age
+              ,team,games,city,sport, event, medal
+            from olympics_history),
+        ranking as
+            (select *, rank() over(order by age desc) as rnk
+            from temp
+            where medal='Gold'),
+    select *
+    from ranking
+    where rnk = 1;
+
+
+10.Find the ratio of male and female athletes participated in all olympics games?
+with t1 as
+        	(select sex, count(1) as cnt
+        	from olympics_history
+        	group by sex),
+        t2 as
+        	(select *, row_number() over(order by cnt) as rn
+        	 from t1),
+        min_cnt as
+        	(select cnt from t2	where rn = 1),
+        max_cnt as
+        	(select cnt from t2	where rn = 2)
+    select concat('1 : ', round(max_cnt.cnt::decimal/min_cnt.cnt, 2)) as ratio
+    from min_cnt, max_cnt;
+
+
+11. Fetch the top 5 atheletes who have won the most gold medals
+select name,team,count(medal) as total_gold_medal from olympics_history
+where medal = 'Gold'
+group by name,team
+order by total_gold_medal desc
+	limit 6;
+
+
+12.Fetch the top 5 athletes who have won the most medals
+(gold/siler/bronze)?
+
+select name,team,count(medal) as no_of_medals from olympics_history
+where medal in ('Gold','Silver','Bronze')
+group by name,team
+order by no_of_medals desc
+limit 7;
+
+
+13.Fetch the top 5 successful countries in olympics?
+select region,count(medal) as total_no_medals from Olympics_history as oh
+inner join olympics_history_noc_regions as ohnr
+on oh.noc = ohnr.noc
+where medal != 'NA' 
+group by region
+order by total_no_medals desc 
+limit 5;
+
+
+14.list down total gold,silver and bronze won by each country?
+
+select region,sum(case when medal ='Gold' then 1 else 0 end) as Gold,
+	sum(case when medal = 'Silver' then 1 else 0 end) as Silver,
+	sum(case when medal = 'Bronze' then 1 else 0 end) as Bronze from olympics_history as oh
+inner join olympics_history_noc_regions as ohnr
+on oh.noc = ohnr.noc
+group by region
+order by Gold desc;
+
+
+15.List down total gold,silver and bronze medals
+won by each country corresponding to each olympic games
+
+select games,region,sum (case when medal = 'Gold' then 1 else 0 end) as Gold,
+       sum (case when medal = 'Silver' then 1 else 0 end ) as Silver,
+       sum (case when medal = 'Bronze' then 1 else 0 end) as Bronze from olympics_history as oh
+inner join olympics_history_noc_regions as ohnr
+on oh.noc = ohnr.noc
+group by games,region
+order by games,region asc;
+
+
+16. Identify which country won the most gold,silver and most bronze in each OlG?
+
+select games,region,sum(case when medal = 'Gold' then 1 else 0 end) as Gold,
+       sum (case when medal = 'Silver' then 1 else 0 end) as Silver,
+       sum (case when medal = 'Bronze' then 1 else 0 end) as Bronze from olympics_history as oh
+inner join olympics_history_noc_regions as ohnr
+on oh.noc = ohnr.noc 
+group by games,region
+order by Gold desc;
+
+
+17.Which countries have never won gold medal but have won silver/bronze medals?
+select region,sum(case when medal ='Gold' then 1 else 0 end) as Gold,
+       sum (case when medal ='Silver' then 1 else 0 end) as silver,
+       sum(case when medal = 'Bronze' then 1 else 0 end) as Bronze from olympics_history as oh
+inner join olympics_history_noc_regions as ohnr
+on oh.noc = ohnr.noc 
+group by region 
+;
+
+
+
+18.In Which sport india has won highest medals
+select sport,count(medal) as highest_medal from olympics_history as oh
+inner join olympics_history_noc_regions as ohnr 
+on oh.noc = ohnr.noc
+where region = 'India' and medal <> 'NA'
+group by sport
+order by highest_medal desc
+	limit 1;
+
+
+
+19.Break down all olympic games where india won medal for hockey and
+how many medals in each olympic games?
+select region,sport,games,count(medal) as total_medals from olympics_history as oh
+inner join olympics_history_noc_regions as ohnr
+on oh.noc = ohnr.noc
+where region = 'India' and sport = 'Hockey' and medal <> 'NA'
+group by region,sport,games
+order by total_medals desc;
+
+
